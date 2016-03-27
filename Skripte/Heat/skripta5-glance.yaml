@@ -1,0 +1,141 @@
+heat_template_version: 2013-05-23
+
+description: "Creates a new image and uses it to create a client and service instance, upon creation the two instances communicate using SOAP."
+
+parameters:
+
+  # Ime novog image-a, 
+  # parametar se zove "new_image_name", 
+  # tipa je "string", 
+  # ima oznaku "New Image Name" 
+  # i predzadana vrijednost mu je "Glance_image"
+  new_image_name:
+    type: string
+    label: New Image Name
+    default: Glance_Image
+
+  # Format spremnika novog image-a, 
+  # parametar se zove "new_image_container_format", 
+  # tipa je "string", 
+  # ima oznaku "New Image Container Format", 
+  # predzadana vrijednost mu je "bare"
+  # i unos je ograničen na vrijednosti koje Glance podržava, 
+  # a one su "ami, ari, aki, bare, ova, ovf"
+  new_image_container_format:
+    type: string
+    label: New Image Container Format
+    default: bare 
+    constraints:
+      - allowed_values: 
+        - ami
+        - ari
+        - aki
+        - bare
+        - ova
+        - ovf
+
+  # Format diska novog image-a, 
+  # parametar se zove "new_image_disk_format", 
+  # tipa je "string", 
+  # ima oznaku "New Image Disk Format", 
+  # predzadana vrijednost mu je "qcow2"
+  # i unos je ograničen na vrijednosti koje Glance podržava, 
+  # a one su "ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, iso"      
+  new_image_disk_format:
+    type: string
+    label: New Image Disk Format
+    default: qcow2 
+    constraints:
+      - allowed_values: 
+        - ami
+        - ari
+        - aki
+        - vhd
+        - vmkd
+        - raw
+        - qcow2
+        - vdi
+        - iso
+
+  # Lokacija podataka za kreiranje novog image-a, 
+  # parametar se zove "new_image_location", 
+  # tipa je "string", 
+  # ima oznaku "New Image Location", 
+  # predzadana vrijednost mu je "https://cloud-images.ubuntu.com/releases/14.04/14.04/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+  new_image_location: 
+    type: string
+    label: New Image Location
+    description: "URL where the data for this image already resides. For example, if the image data is stored in swift, you could specify “swift://example.com/container/obj”."  
+    default: https://cloud-images.ubuntu.com/releases/14.04/14.04/ubuntu-14.04-server-cloudimg-amd64-disk1.img
+  
+  flavor:
+    type: string
+    label: Flavor
+    description: Type of instance (flavor) to be used on the compute instance.
+    default: m1.small
+
+  key:
+    type: string
+    label: Key name
+    description: Name of key-pair to be installed on the compute instance.
+    default: my_key1
+
+  private_network:
+    type: string
+    label: Private network name or ID
+    description: Network to attach server to.
+    default: my_net2
+
+  public_network:
+    type: string
+    label: Public network name or ID
+    description: Network to attach server to.
+    default: net04_ext
+
+resources:
+  # Image kojeg želimo stvoriti, za to koristimo Glance API
+  # Pod properties prosljeđujemo parametre (koristimo get_param za dohvačanje istih)
+  image:
+    type: OS::Glance::Image
+    properties:
+      name: { get_param: new_image_name }
+      container_format: { get_param: new_image_container_format}
+      disk_format: { get_param: new_image_disk_format }
+      location: { get_param: new_image_location }
+
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: LAMP_security_group
+      rules:
+        - port_range_min: 80
+          port_range_max: 80
+          protocol: tcp
+          direction: ingress
+        - port_range_min: 80
+          port_range_max: 80
+          protocol: tcp
+          direction: egress
+
+  service:
+    type: https://raw.githubusercontent.com/SaltyOrange/ARIKS2016/master/Skripte/Heat/resursi/service.yaml
+    properties:
+      # Koristimo stvoreni image da bi pokrenuli service (Prosljeđujemo ime image-a)
+      image: { get_param: new_image_name }
+      flavor: { get_param: flavor }
+      key: { get_param: key }
+      private_network: { get_param: private_network }
+      public_network: { get_param: public_network }
+      security_group: { get_resource: security_group }
+
+  client:
+    type: https://raw.githubusercontent.com/nikoladom91/ARIKS2016/master/Skripte/Heat/resursi/client.yaml
+    properties:
+      # Koristimo stvoreni image da bi pokrenuli clint (Prosljeđujemo ime image-a)
+      image: { get_param: new_image_name }
+      flavor: { get_param: flavor }
+      key: { get_param: key }
+      private_network: { get_param: private_network }
+      public_network: { get_param: public_network }
+      service_server: { get_attr: [service, ip] }
+      security_group: { get_resource: security_group }

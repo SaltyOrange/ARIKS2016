@@ -34,7 +34,8 @@ resources:
     properties:
       handle: { get_resource: wait_handle }
       count: 1
-      timeout: 600
+      # Increased due to timeouts (possibly because of image creation taking some time to complete)
+      timeout: 1200
  
   wait_handle:
     type: OS::Heat::WaitConditionHandle
