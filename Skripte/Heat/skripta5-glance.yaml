@@ -61,12 +61,12 @@ parameters:
   # parametar se zove "new_image_location", 
   # tipa je "string", 
   # ima oznaku "New Image Location", 
-  # predzadana vrijednost mu je "https://cloud-images.ubuntu.com/releases/14.04/14.04/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+  # predzadana vrijednost mu je "http://cloud-images.ubuntu.com/releases/14.04/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
   new_image_location: 
     type: string
     label: New Image Location
     description: "URL where the data for this image already resides. For example, if the image data is stored in swift, you could specify “swift://example.com/container/obj”."  
-    default: https://cloud-images.ubuntu.com/releases/14.04/14.04/ubuntu-14.04-server-cloudimg-amd64-disk1.img
+    default: http://cloud-images.ubuntu.com/releases/14.04/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img
   
   flavor:
     type: string
